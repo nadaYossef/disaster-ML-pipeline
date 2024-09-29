@@ -1,79 +1,110 @@
-# -*- coding: utf-8 -*-
-
-import nltk
-import string
+import sys
 import pandas as pd
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.multioutput import MultiOutputClassifier
+from sqlalchemy import create_engine
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-from xgboost import XGBClassifier
+from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer, PorterStemmer
-from sqlalchemy import create_engine
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+import pickle
 
-engine = create_engine('sqlite:///messages_categories.db')
-df = pd.read_sql_table('messages_categories', con=engine)
+def load_data(database_filepath):
+    """
+    Load data from the SQLite database.
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+    Args:
+    database_filepath (str): File path for the SQLite database file.
 
-# Initialize stop words, lemmatizer, and stemmer
-stop_words = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
-stemmer = PorterStemmer()
+    Returns:
+    X (DataFrame): Feature variables (message text).
+    Y (DataFrame): Target variables (categories).
+    category_names (list): List of category names.
+    """
+    engine = create_engine(f'sqlite:///{database_filepath}')
+    df = pd.read_sql_table('DisasterResponse', engine)
+    
+    X = df['message']  # Messages (features)
+    Y = df.iloc[:, 4:]  # Categories (target)
+    category_names = Y.columns.tolist()
+    
+    return X, Y, category_names
 
-def preprocess_message(message):
-    message = message.lower()
+def build_model():
+    """
+    Build a machine learning pipeline for multi-output classification.
 
-    # Tokenize the message
-    tokens = word_tokenize(message)
+    Returns:
+    model (Pipeline): A scikit-learn pipeline for processing and classifying messages.
+    """
+    pipeline = Pipeline([
+        ('vect', CountVectorizer()),  # Text to word frequency counts
+        ('tfidf', TfidfTransformer()),  # Term frequency-inverse document frequency
+        ('clf', MultiOutputClassifier(RandomForestClassifier()))  # Multi-output classification
+    ])
+    
+    return pipeline
 
-    # Remove punctuation and non-alphabetic characters
-    tokens = [word for word in tokens if word.isalpha()]
+def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Evaluate the model on the test data and print classification report for each category.
 
-    # Remove stop words
-    tokens = [word for word in tokens if word not in stop_words]
+    Args:
+    model (Pipeline): Trained model pipeline.
+    X_test (DataFrame): Test data (messages).
+    Y_test (DataFrame): True values for test data (categories).
+    category_names (list): List of category names.
+    """
+    Y_pred = model.predict(X_test)
+    
+    for i, category in enumerate(category_names):
+        print(f'Category: {category}\n', classification_report(Y_test.iloc[:, i], Y_pred[:, i]))
 
-    # Lemmatization and Stemming
-    cleaned_tokens = [stemmer.stem(lemmatizer.lemmatize(word)) for word in tokens]
+def save_model(model, model_filepath):
+    """
+    Save the trained model as a pickle file.
 
-    # Rejoin tokens
-    cleaned_message = ' '.join(cleaned_tokens)
+    Args:
+    model (Pipeline): Trained model.
+    model_filepath (str): File path to save the pickle file.
+    """
+    with open(model_filepath, 'wb') as file:
+        pickle.dump(model, file)
 
-    return cleaned_message
+def main():
+    """
+    Main function to load data, train a classifier, and save the model as a pickle file.
 
-X = df['message']
-y = df.iloc[:, 4:]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    This function:
+    - Loads data from an SQLite database.
+    - Trains a machine learning model on the data.
+    - Saves the trained model as a pickle file.
+    """
+    if len(sys.argv) == 3:
+        database_filepath, model_filepath = sys.argv[1:]
+        print(f'Loading data from {database_filepath}...')
+        X, Y, category_names = load_data(database_filepath)
+        
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        
+        print('Building model...')
+        model = build_model()
+        
+        print('Training model...')
+        model.fit(X_train, Y_train)
+        
+        print('Evaluating model...')
+        evaluate_model(model, X_test, Y_test, category_names)
+        
+        print(f'Saving model to {model_filepath}...')
+        save_model(model, model_filepath)
+        
+        print('Model saved!')
+    else:
+        print('Please provide the filepath of the disaster messages database '\
+              'as the first argument and the filepath of the pickle file to '\
+              'save the model to as the second argument. \n\nExample: python '\
+              'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
 
-# Build the machine learning pipeline with XGBoost as the base estimator
-pipeline = Pipeline([
-    ('tfidf', TfidfVectorizer(tokenizer=preprocess_message)),  # Vectorizer with custom preprocessing
-    ('clf', MultiOutputClassifier(XGBClassifier(use_label_encoder=False, eval_metric='mlogloss')))  # Multi-output classifier
-])
-
-# Define the parameter grid for hyperparameter tuning
-param_grid = {
-    'clf__estimator__n_estimators': [50, 100],
-    'clf__estimator__max_depth': [3, 5, 7],
-    'clf__estimator__learning_rate': [0.01, 0.1, 0.2],
-}
-
-grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1_micro', n_jobs=-1)
-grid_search.fit(X_train, y_train)
-
-best_pipeline = grid_search.best_estimator_
-
-y_pred = best_pipeline.predict(X_test)
-
-for i, col in enumerate(y.columns):
-    print(f'Classification report for {col}:')
-    print(classification_report(y_test.iloc[:, i], y_pred[:, i]))
-    print("\n")
-print("Best parameters found: ", grid_search.best_params_)
+if __name__ == '__main__':
+    main()
