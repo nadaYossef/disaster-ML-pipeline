@@ -1,5 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine
+import pickle
 
 def load_data(messages_filepath, categories_filepath):
     """
@@ -52,19 +53,26 @@ def clean_data(messages, categories):
 
     # Remove duplicate rows
     df = df.drop_duplicates()
-    
+
     return df
 
 def save_data(df, database_filename):
     """
-    Save the cleaned dataset into an SQLite database.
+    Save the cleaned dataset into an SQLite database and as a pickle file.
 
     Args:
     df (DataFrame): Cleaned dataset.
     database_filename (str): File path for the SQLite database file.
     """
+    # Save the dataset to an SQLite database
     engine = create_engine(f'sqlite:///{database_filename}')
     df.to_sql('DisasterResponse', engine, index=False, if_exists='replace')
+
+    # Save the dataset as a pickle file
+    with open('cleaned_data.pkl', 'wb') as file:
+        pickle.dump(df, file)
+
+    print("Data saved to SQLite database and as 'cleaned_data.pkl'")
 
 def main():
     """
@@ -73,14 +81,19 @@ def main():
     This function:
     - Loads messages and categories datasets.
     - Cleans the merged data.
-    - Saves the cleaned data into an SQLite database.
+    - Saves the cleaned data into an SQLite database and as a pickle file.
     """
     messages_filepath = 'messages.csv'
     categories_filepath = 'categories.csv'
     database_filename = 'DisasterResponse.db'
 
+    # Load datasets
     messages, categories = load_data(messages_filepath, categories_filepath)
+    
+    # Clean datasets
     df = clean_data(messages, categories)
+    
+    # Save cleaned dataset
     save_data(df, database_filename)
 
 if __name__ == '__main__':
