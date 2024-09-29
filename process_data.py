@@ -1,64 +1,87 @@
-# -*- coding: utf-8 -*-
-
-# Necessary Imports
 import pandas as pd
-from sklearn.utils import resample
 from sqlalchemy import create_engine
 
-# Load datasets
-categories = pd.read_csv('/content/categories.csv')
-messages = pd.read_csv('/content/messages.csv')
+def load_data(messages_filepath, categories_filepath):
+    """
+    Load messages and categories datasets from CSV files.
 
-# Drop duplicates and unnecessary columns
-messages.drop(['original'], axis=1, inplace=True)
-messages.drop_duplicates(inplace=True)
+    Args:
+    messages_filepath (str): File path for the messages CSV file.
+    categories_filepath (str): File path for the categories CSV file.
 
-# Process categories dataset
-cat = categories['categories'].str.split(';', expand=True)
-row = cat.iloc[0]
-category_colnames = row.apply(lambda x: x[:-2])
-cat.columns = category_colnames
+    Returns:
+    messages (DataFrame): Loaded messages dataset.
+    categories (DataFrame): Loaded categories dataset.
+    """
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
+    return messages, categories
 
-# Convert category values to integers (0 or 1)
-for column in cat:
-    cat[column] = cat[column].str[-1].astype(int)
+def clean_data(messages, categories):
+    """
+    Merge and clean the messages and categories datasets.
 
-# Drop the old 'categories' column and merge the processed categories
-categories.drop('categories', axis=1, inplace=True)
-categories = pd.concat([categories, cat], axis=1)
+    - Merges messages and categories on the 'id' column.
+    - Splits the categories into separate columns.
+    - Converts category values to binary (0 or 1).
+    - Removes duplicates from the dataset.
 
-# Merge datasets on 'id'
-df = messages.merge(categories, on='id')
+    Args:
+    messages (DataFrame): Messages dataset.
+    categories (DataFrame): Categories dataset.
 
-# Drop nulls
-df.dropna(inplace=True)
+    Returns:
+    df (DataFrame): Cleaned and merged dataset.
+    """
+    # Merge messages and categories datasets
+    df = messages.merge(categories, on='id')
 
-# Handle data imbalance
-# Identify the columns to use for balancing
-numerical_columns = df.select_dtypes(include='number').columns.tolist()
+    # Split categories into separate columns
+    categories = df['categories'].str.split(';', expand=True)
+    row = categories.iloc[0]
+    category_colnames = row.apply(lambda x: x[:-2])
+    categories.columns = category_colnames
 
-# Count the number of occurrences of each unique row to find majority/minority
-counts = df[numerical_columns].value_counts()
-majority_count = counts.max()
-minority_count = counts.min()
+    # Convert category values to binary (0 or 1)
+    for column in categories:
+        categories[column] = categories[column].str[-1].astype(int)
 
-# Separate majority and minority classes
-majority_class = df[df[numerical_columns].apply(tuple, axis=1).isin(counts[counts == majority_count].index)]
-minority_class = df[df[numerical_columns].apply(tuple, axis=1).isin(counts[counts == minority_count].index)]
+    # Drop original categories column and concatenate cleaned categories
+    df = df.drop('categories', axis=1)
+    df = pd.concat([df, categories], axis=1)
 
-# Changed from downsampling to upsampling as the majority class was too small
-minority_class_upsampled = resample(minority_class,
-                                     replace=True,  # sample with replacement
-                                     n_samples=len(majority_class),  # to match majority class
-                                     random_state=42)  # reproducible results
+    # Remove duplicate rows
+    df = df.drop_duplicates()
+    
+    return df
 
-# Combine upsampled minority class with majority class
-df_balanced = pd.concat([majority_class, minority_class_upsampled])
+def save_data(df, database_filename):
+    """
+    Save the cleaned dataset into an SQLite database.
 
-# SQL Database Creation
-engine = create_engine('sqlite:///messages_categories.db')
-df_balanced.to_sql('messages_categories', con=engine, if_exists='replace', index=False)
+    Args:
+    df (DataFrame): Cleaned dataset.
+    database_filename (str): File path for the SQLite database file.
+    """
+    engine = create_engine(f'sqlite:///{database_filename}')
+    df.to_sql('DisasterResponse', engine, index=False, if_exists='replace')
 
-print("ETL process completed with nulls dropped and data imbalance handled. Data saved to SQL database.")
+def main():
+    """
+    Main function to load, clean, and save the data.
 
-df.head()
+    This function:
+    - Loads messages and categories datasets.
+    - Cleans the merged data.
+    - Saves the cleaned data into an SQLite database.
+    """
+    messages_filepath = 'messages.csv'
+    categories_filepath = 'categories.csv'
+    database_filename = 'DisasterResponse.db'
+
+    messages, categories = load_data(messages_filepath, categories_filepath)
+    df = clean_data(messages, categories)
+    save_data(df, database_filename)
+
+if __name__ == '__main__':
+    main()
