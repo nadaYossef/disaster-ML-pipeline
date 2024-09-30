@@ -1,4 +1,3 @@
-import sys
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
@@ -11,49 +10,63 @@ import pickle
 
 def load_data(database_filepath):
     """
-    Load data from the SQLite database.
-
+    Load data from the SQLite database, extract features (messages) and target variables (categories).
+    
     Args:
-    database_filepath (str): File path for the SQLite database file.
-
+        database_filepath (str): File path of the SQLite database.
+    
     Returns:
-    X (DataFrame): Feature variables (message text).
-    Y (DataFrame): Target variables (categories).
-    category_names (list): List of category names.
+        X (pd.Series): Feature data (messages) from the 'message' column.
+        Y (pd.DataFrame): Target variables (categories) for multi-output classification.
+        category_names (list): List of category names representing the columns of Y.
+    
+    Raises:
+        ValueError: If 'message' column is not found in the 'Message' table of the database.
     """
     engine = create_engine(f'sqlite:///{database_filepath}')
-    df = pd.read_sql_table('DisasterResponse', engine)
-    
+    df = pd.read_sql_table('Message', engine)
+
+    if 'message' not in df.columns:
+        raise ValueError("Column 'message' not found in the Message table.")
+
+    category_columns = df.columns[1:]  # Assuming the first column is 'message' and others are categories
     X = df['message']  # Messages (features)
-    Y = df.iloc[:, 4:]  # Categories (target)
-    category_names = Y.columns.tolist()
+    Y = df[category_columns]  # Categories (target)
     
+    # Ensure target columns are numeric, handle any conversion errors
+    for column in Y.columns:
+        Y[column] = pd.to_numeric(Y[column], errors='coerce')
+    
+    # Fill missing values in Y with 0
+    Y = Y.fillna(0)
+    
+    category_names = category_columns.tolist()
+
     return X, Y, category_names
 
 def build_model():
     """
-    Build a machine learning pipeline for multi-output classification.
-
+    Build a machine learning pipeline for multi-output classification using RandomForestClassifier.
+    
     Returns:
-    model (Pipeline): A scikit-learn pipeline for processing and classifying messages.
+        pipeline (Pipeline): A Scikit-learn pipeline object.
     """
     pipeline = Pipeline([
-        ('vect', CountVectorizer()),  # Text to word frequency counts
+        ('vect', CountVectorizer()),  # Convert text to word frequency counts
         ('tfidf', TfidfTransformer()),  # Term frequency-inverse document frequency
         ('clf', MultiOutputClassifier(RandomForestClassifier()))  # Multi-output classification
     ])
-    
     return pipeline
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """
-    Evaluate the model on the test data and print classification report for each category.
-
+    Evaluate the trained model on test data and print classification reports for each category.
+    
     Args:
-    model (Pipeline): Trained model pipeline.
-    X_test (DataFrame): Test data (messages).
-    Y_test (DataFrame): True values for test data (categories).
-    category_names (list): List of category names.
+        model (Pipeline): The trained model pipeline.
+        X_test (pd.Series): Test features (messages).
+        Y_test (pd.DataFrame): True labels for the test set (target categories).
+        category_names (list): List of category names for the target variables.
     """
     Y_pred = model.predict(X_test)
     
@@ -63,48 +76,47 @@ def evaluate_model(model, X_test, Y_test, category_names):
 def save_model(model, model_filepath):
     """
     Save the trained model as a pickle file.
-
+    
     Args:
-    model (Pipeline): Trained model.
-    model_filepath (str): File path to save the pickle file.
+        model (Pipeline): Trained machine learning model.
+        model_filepath (str): File path where the model pickle file will be saved.
     """
     with open(model_filepath, 'wb') as file:
         pickle.dump(model, file)
 
 def main():
     """
-    Main function to load data, train a classifier, and save the model as a pickle file.
-
-    This function:
-    - Loads data from an SQLite database.
+    Main function to load data, build the model, train it, evaluate it, and save the model.
+    
+    - Loads the disaster response data from the SQLite database.
+    - Splits the data into training and test sets.
     - Trains a machine learning model on the data.
+    - Evaluates the model on the test set and prints the performance for each category.
     - Saves the trained model as a pickle file.
     """
-    if len(sys.argv) == 3:
-        database_filepath, model_filepath = sys.argv[1:]
-        print(f'Loading data from {database_filepath}...')
-        X, Y, category_names = load_data(database_filepath)
-        
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-        
-        print('Building model...')
-        model = build_model()
-        
-        print('Training model...')
-        model.fit(X_train, Y_train)
-        
-        print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
-        
-        print(f'Saving model to {model_filepath}...')
-        save_model(model, model_filepath)
-        
-        print('Model saved!')
-    else:
-        print('Please provide the filepath of the disaster messages database '\
-              'as the first argument and the filepath of the pickle file to '\
-              'save the model to as the second argument. \n\nExample: python '\
-              'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
+    # File paths for the database and where to save the trained model
+    database_filepath = '/content/DisasterResponse.db'  # Path to your SQLite database
+    model_filepath = '/content/classifier.pkl'  # Path to save the model pickle
+
+    print(f'Loading data from {database_filepath}...')
+    X, Y, category_names = load_data(database_filepath)
+    
+    # Split data into training and test sets
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+    
+    print('Building model...')
+    model = build_model()
+    
+    print('Training model...')
+    model.fit(X_train, Y_train)
+    
+    print('Evaluating model...')
+    evaluate_model(model, X_test, Y_test, category_names)
+    
+    print(f'Saving model to {model_filepath}...')
+    save_model(model, model_filepath)
+    
+    print('Model saved!')
 
 if __name__ == '__main__':
     main()
