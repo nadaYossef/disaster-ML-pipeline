@@ -7,3 +7,5 @@ SQLAlchemy
 nltk
 Flask
 joblib
+wordcloud
+Pillow
