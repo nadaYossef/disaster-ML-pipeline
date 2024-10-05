@@ -14,7 +14,7 @@ from joblib import parallel_backend
 tqdm.pandas()
 
 def load_data(database_filepath):
-    """Load data from the SQLite database."""
+    """Load data from the SQLite database and display database information."""
     engine = create_engine(f'sqlite:///{database_filepath}')
     df = pd.read_sql_table('Message', engine)
 
@@ -28,10 +28,18 @@ def load_data(database_filepath):
     # Ensure target variables are binary
     Y = (Y > 0).astype(int)
 
+    # Print database information and show head
+    print("Database loaded successfully!")
+    print("Dataframe Info:\n")
+    print(df.info())  # Show dataframe structure info
+    print("\nDataframe Head:\n")
+    print(df.head())  # Show the first 5 rows of the dataframe
+
     # Check unique values to confirm binary encoding
-    print("Unique values in target columns:\n", Y.nunique())
+    print("\nUnique values in target columns:\n", Y.nunique())
 
     return X, Y, Y.columns.tolist()
+
 
 def sample_data(X, Y, sample_size=0.1):
     """Sample a subset of the data."""
