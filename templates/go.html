@@ -9,16 +9,35 @@
 
 {% block content %}
     <h1 class="text-center">Result</h1>
-        <ul class="list-group">
-            {% for category, classification in classification_result.items() %}
-                {% if classification == 1 %}
-                    <li class="list-group-item list-group-item-success text-center">{{category.replace('_', ' ').title()}}</li>
-                {% else %}
-                    <li class="list-group-item list-group-item-dark text-center">{{category.replace('_', ' ').title()}}</li>
-                {% endif %}
-            {% endfor %}
-
-        </div>
+    <ul class="list-group">
+        {% for category, classification in classification_result.items() %}
+            {% if classification == 1 %}
+                <li class="list-group-item list-group-item-success text-center">{{category.replace('_', ' ').title()}}</li>
+            {% else %}
+                <li class="list-group-item list-group-item-dark text-center">{{category.replace('_', ' ').title()}}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    
+    <hr>
+    <h2 class="text-center">Visualizations</h2>
+    <div>
+        <h3 class="text-center">Word Cloud</h3>
+        <img src="data:image/png;base64,{{ wordcloud_img }}" alt="Word Cloud" class="img-responsive center-block">
     </div>
-
+    
+    <div>
+        <h3 class="text-center">Overview of Visualizations</h3>
+        {% for id in ids %}
+            <div id="{{id}}"></div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        var graphs = {{ graphJSON | safe }};
+        graphs.forEach(function(graph, index) {
+            var graphDiv = document.getElementById('graph-' + index);
+            Plotly.newPlot(graphDiv, graph.data, graph.layout);
+        });
+    </script>
 {% endblock %}
