@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Response Classifier</title>
+</head>
+<body>
+    <h1>Disaster Response Message Classifier</h1>
+    <form action="/predict" method="POST">
+        <label for="message">Enter your message:</label>
+        <textarea id="message" name="message" rows="4" cols="50"></textarea><br><br>
+        <button type="submit">Predict</button>
+    </form>
+</body>
+</html>
