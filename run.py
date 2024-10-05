@@ -67,9 +67,8 @@ def most_frequent_words(text_column, n=10):
 @app.route('/')
 @app.route('/index')
 def index():
-    # Q1: How is the distribution of message genres?
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
+    if df.empty:
+        return render_template('error.html', message="DataFrame is empty. Cannot display visualizations.")
 
     # Q2: What is the distribution of the `related` column?
     related_counts = df['related'].value_counts()
@@ -81,20 +80,6 @@ def index():
 
     # Create visualizations
     graphs = [
-        # Bar chart for genre distribution
-        {
-            'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
-                )
-            ],
-            'layout': {
-                'title': 'Distribution of Message Genres',
-                'yaxis': {'title': "Count"},
-                'xaxis': {'title': "Genre"}
-            }
-        },
         # Pie chart for related messages
         {
             'data': [
