@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-run.py
-
-Flask web application for disaster response project with visualizations.
-"""
-
 import json
 import plotly
 import pandas as pd
@@ -13,7 +6,7 @@ from nltk.tokenize import word_tokenize
 from flask import Flask, render_template, request, jsonify
 from plotly.graph_objs import Bar, Pie
 import joblib
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from collections import Counter
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -32,7 +25,15 @@ def tokenize(text):
 
 # Load data
 engine = create_engine('sqlite:///../DisasterResponse.db')
-df = pd.read_sql_table('Message', engine)
+inspector = inspect(engine)
+
+# Get the first table name dynamically
+table_names = inspector.get_table_names()
+if table_names:
+    # Fetch the data from the first table
+    df = pd.read_sql_table(table_names[0], engine)
+else:
+    df = pd.DataFrame()  # Handle case where there are no tables
 
 # Load model
 model = joblib.load("../models/classifier.pkl")
@@ -70,11 +71,11 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
 
-    # Q3: What is the distribution of the `related` column?
+    # Q2: What is the distribution of the `related` column?
     related_counts = df['related'].value_counts()
     related_labels = ['Related', 'Not Related']
 
-    # Q5: Distribution of offers
+    # Q3: Distribution of offers
     offer_counts = df['offer'].value_counts()
     offer_labels = ['No Offer', 'Offer']
 
