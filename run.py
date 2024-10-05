@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+run.py
+
+Flask web application for disaster response project with visualizations.
+"""
+
 import json
 import plotly
 import pandas as pd
@@ -24,12 +31,11 @@ def tokenize(text):
     return clean_tokens
 
 # Load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../DisasterResponse.db')
+df = pd.read_sql_table('Message', engine)
 
 # Load model
-model = joblib.load("../models/your_model_name.pkl")
-
+model = joblib.load("../models/classifier.pkl")
 
 # Helper function for word cloud generation
 def generate_wordcloud(text_column):
@@ -46,7 +52,6 @@ def generate_wordcloud(text_column):
     img_b64 = base64.b64encode(img.getvalue()).decode('utf8')
     return img_b64
 
-
 # Helper function for question 2 - most frequent words
 def most_frequent_words(text_column, n=10):
     tokens = " ".join(text_column).split()
@@ -57,7 +62,6 @@ def most_frequent_words(text_column, n=10):
     counts = [count for word, count in common_words]
 
     return words, counts
-
 
 @app.route('/')
 @app.route('/index')
@@ -125,7 +129,6 @@ def index():
 
     return render_template('master.html', ids=ids, graphJSON=graphJSON, wordcloud_img=img_b64)
 
-
 @app.route('/go')
 def go():
     # Save user input in query
@@ -142,10 +145,8 @@ def go():
         classification_result=classification_results
     )
 
-
 def main():
     app.run(host='0.0.0.0', port=3000, debug=True)
-
 
 if __name__ == '__main__':
     main()
