@@ -1,6 +1,8 @@
 import pandas as pd
 from sqlalchemy import create_engine
 import pickle
+import os
+
 
 def load_data(messages_filepath, categories_filepath):
     """
@@ -75,17 +77,9 @@ def save_data(df, database_filename):
     print("Data saved to SQLite database and as 'cleaned_data.pkl'")
 
 def main():
-    """
-    Main function to load, clean, and save the data.
-
-    This function:
-    - Loads messages and categories datasets.
-    - Cleans the merged data.
-    - Saves the cleaned data into an SQLite database and as a pickle file.
-    """
-    messages_filepath = 'messages.csv'
-    categories_filepath = 'categories.csv'
-    database_filename = 'DisasterResponse.db'
+    messages_filepath = os.path.join(os.path.dirname(__file__), 'data', 'messages.csv')
+    categories_filepath = os.path.join(os.path.dirname(__file__), 'data', 'categories.csv')
+    database_filename = os.path.join(os.path.dirname(__file__), 'DisasterResponse.db')
 
     # Load datasets
     messages, categories = load_data(messages_filepath, categories_filepath)
