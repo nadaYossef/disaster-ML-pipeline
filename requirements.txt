@@ -2,7 +2,6 @@ pandas
 plotly
 numpy
 scikit-learn
-sqlite3
 xgboost
 SQLAlchemy
 nltk
