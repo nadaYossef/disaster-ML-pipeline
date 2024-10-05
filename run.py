@@ -36,7 +36,7 @@ else:
     df = pd.DataFrame()  # Handle case where there are no tables
 
 # Load model
-model = joblib.load("../models/classifier.pkl")
+model = joblib.load("classifier.pkl")
 
 # Helper function for word cloud generation
 def generate_wordcloud(text_column):
