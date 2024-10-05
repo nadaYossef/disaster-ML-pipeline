@@ -66,9 +66,12 @@ def most_frequent_words(text_column, n=10):
 
 @app.route('/')
 @app.route('/index')
+@app.route('/')
+@app.route('/index')
 def index():
     if df.empty:
-        return render_template('error.html', message="DataFrame is empty. Cannot display visualizations.")
+        # Return a simple message if the DataFrame is empty
+        return "DataFrame is empty. Cannot display visualizations.", 404  # Returning a 404 status code
 
     # Q2: What is the distribution of the `related` column?
     related_counts = df['related'].value_counts()
@@ -114,6 +117,7 @@ def index():
     img_b64 = generate_wordcloud(df['message'].astype(str))
 
     return render_template('master.html', ids=ids, graphJSON=graphJSON, wordcloud_img=img_b64)
+
 
 @app.route('/go')
 def go():
