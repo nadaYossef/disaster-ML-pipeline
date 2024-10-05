@@ -88,8 +88,8 @@ def save_model(model, model_filepath):
 
 def main():
     # Manually specify the paths
-    database_filepath = '/content/DisasterResponse.db'  # Path to your database file
-    model_filepath = '/content/classifier.pkl'  # Path to save the model
+    database_filepath = 'DisasterResponse.db'  # Path to your database file
+    model_filepath = 'classifier.pkl'  # Path to save the model
 
     print(f'Loading data from {database_filepath}...')
     X, Y, category_names = load_data(database_filepath)
