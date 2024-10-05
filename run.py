@@ -14,7 +14,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from flask import Flask, render_template, request, jsonify
 from plotly.graph_objs import Bar, Pie
-from sklearn.externals import joblib
+import joblib
 from sqlalchemy import create_engine
 from collections import Counter
 from wordcloud import WordCloud
