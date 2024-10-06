@@ -16,7 +16,7 @@ tqdm.pandas()
 def load_data(database_filepath):
     """Load data from the SQLite database and display database information."""
     engine = create_engine(f'sqlite:///{database_filepath}')
-    df = pd.read_sql_table('Message', engine)
+    df = pd.read_sql_table('DisasterResponse', engine)
 
     # Skip the first column which is the message ID
     X = df['message']  # Messages (features)
