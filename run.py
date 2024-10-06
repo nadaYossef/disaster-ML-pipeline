@@ -8,10 +8,6 @@ from plotly.graph_objs import Bar, Pie
 import joblib
 from sqlalchemy import create_engine, inspect
 from collections import Counter
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-import base64
-from io import BytesIO
 
 app = Flask(__name__)
 
@@ -38,7 +34,6 @@ else:
 # Load model
 model = joblib.load("classifier.pkl")
 
-
 # Helper function for question 2 - most frequent words
 def most_frequent_words(text_column, n=10):
     tokens = " ".join(text_column).split()
@@ -50,8 +45,6 @@ def most_frequent_words(text_column, n=10):
 
     return words, counts
 
-@app.route('/')
-@app.route('/index')
 @app.route('/')
 @app.route('/index')
 def index():
@@ -99,11 +92,7 @@ def index():
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
 
-    # Generate word cloud for Q2: most frequent words
-    img_b64 = generate_wordcloud(df['message'].astype(str))
-
-    return render_template('master.html', ids=ids, graphJSON=graphJSON, wordcloud_img=img_b64)
-
+    return render_template('master.html', ids=ids, graphJSON=graphJSON)
 
 @app.route('/go')
 def go():
@@ -126,3 +115,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
