@@ -34,7 +34,7 @@ else:
 # Load model
 model = joblib.load("classifier.pkl")
 
-# Helper function for question 2 - most frequent words
+# Helper function for most frequent words
 def most_frequent_words(text_column, n=10):
     tokens = " ".join(text_column).split()
     word_counts = Counter(tokens)
@@ -115,4 +115,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
