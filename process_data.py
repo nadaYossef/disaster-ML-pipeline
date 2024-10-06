@@ -49,6 +49,9 @@ def clean_data(messages, categories):
     for column in categories:
         categories[column] = categories[column].str[-1].astype(int)
 
+    # Drop rows where 'related' column has value 2
+    categories = categories[categories['related'] != 2]
+
     # Drop original categories column and concatenate cleaned categories
     df = df.drop('categories', axis=1)
     df = pd.concat([df, categories], axis=1)
