@@ -9,9 +9,43 @@ from sklearn.feature_extraction.text import CountVectorizer
 import pickle
 from tqdm import tqdm
 from joblib import parallel_backend
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import os
+
+# Download necessary NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
 
 # Enable tqdm for all iterations in scikit-learn
 tqdm.pandas()
+
+def tokenize(text):
+    """
+    Tokenize the text data by normalizing case, removing stopwords, and lemmatizing.
+
+    Args:
+    text (str): The text to be tokenized.
+
+    Returns:
+    tokens (list): List of cleaned tokens.
+    """
+    # Normalize case and tokenize text
+    text = text.lower()
+    tokens = word_tokenize(text)
+
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [tok for tok in tokens if tok not in stop_words]
+
+    # Lemmatize tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(tok) for tok in tokens]
+
+    return tokens
 
 def load_data(database_filepath):
     """Load data from the SQLite database and display database information."""
@@ -40,7 +74,6 @@ def load_data(database_filepath):
 
     return X, Y, Y.columns.tolist()
 
-
 def sample_data(X, Y, sample_size=0.1):
     """Sample a subset of the data."""
     X_sample, _, Y_sample, _ = train_test_split(X, Y, train_size=sample_size, random_state=42)
@@ -49,7 +82,7 @@ def sample_data(X, Y, sample_size=0.1):
 def build_model():
     """Build a machine learning pipeline with RandomizedSearchCV."""
     pipeline = Pipeline([
-        ('countvectorizer', CountVectorizer(max_features=5000)),  # Limit to 5k features for faster processing
+        ('countvectorizer', CountVectorizer(tokenizer=tokenize, max_features=5000)),  # Use custom tokenizer
         ('clf', MultiOutputClassifier(XGBClassifier(use_label_encoder=False, eval_metric='logloss')))
     ])
 
@@ -94,11 +127,7 @@ def save_model(model, model_filepath):
     with open(model_filepath, 'wb') as file:
         pickle.dump(model, file)
 
-def main():
-    # Manually specify the paths
-    database_filepath = 'DisasterResponse.db'  # Path to your database file
-    model_filepath = 'classifier.pkl'  # Path to save the model
-
+def main(database_filepath, model_filepath):
     print(f'Loading data from {database_filepath}...')
     X, Y, category_names = load_data(database_filepath)
 
@@ -126,4 +155,8 @@ def main():
     print('Model saved!')
 
 if __name__ == '__main__':
-    main()
+    # Manually specify the paths or use command-line arguments
+    database_filepath = 'DisasterResponse.db'  # Path to your database file
+    model_filepath = 'classifier.pkl'  # Path to save the model
+
+    main(database_filepath, model_filepath)
