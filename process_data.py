@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 import pickle
 import os
-
+import sys
 
 def load_data(messages_filepath, categories_filepath):
     """
@@ -77,18 +77,21 @@ def save_data(df, database_filename):
     print("Data saved to SQLite database and as 'cleaned_data.pkl'")
 
 def main():
-    messages_filepath = 'data/messages.csv' 
-    categories_filepath = 'data/categories.csv'
-    database_filename = 'DisasterResponse.db'
+    if len(sys.argv) == 4:
+        messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
 
-    # Load datasets
-    messages, categories = load_data(messages_filepath, categories_filepath)
-    
-    # Clean datasets
-    df = clean_data(messages, categories)
-    
-    # Save cleaned dataset
-    save_data(df, database_filename)
+        print(f"Loading data...\n    MESSAGES: {messages_filepath}\n    CATEGORIES: {categories_filepath}")
+        messages, categories = load_data(messages_filepath, categories_filepath)
+
+        print("Cleaning data...")
+        df = clean_data(messages, categories)
+
+        print(f"Saving data...\n    DATABASE: {database_filepath}")
+        save_data(df, database_filepath)
+
+        print("Cleaned data saved to database!")
+    else:
+        print("Please provide the filepaths of the messages and categories datasets as well as the filepath of the database to save the cleaned data to as arguments. \n\nExample: python process_data.py data/messages.csv data/categories.csv DisasterResponse.db")
 
 if __name__ == '__main__':
     main()
