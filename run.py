@@ -24,7 +24,7 @@ def tokenize(text):
     return clean_tokens
 
 # Load data
-engine = create_engine('sqlite:///../DisasterResponse.db')
+engine = create_engine('sqlite:///DisasterResponse.db')
 inspector = inspect(engine)
 
 # Get the first table name dynamically
