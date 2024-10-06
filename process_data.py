@@ -77,9 +77,9 @@ def save_data(df, database_filename):
     print("Data saved to SQLite database and as 'cleaned_data.pkl'")
 
 def main():
-    messages_filepath = os.path.join(os.path.dirname(__file__), 'data', 'messages.csv')
-    categories_filepath = os.path.join(os.path.dirname(__file__), 'data', 'categories.csv')
-    database_filename = os.path.join(os.path.dirname(__file__), 'DisasterResponse.db')
+    messages_filepath = 'data/messages.csv' 
+    categories_filepath = 'data/categories.csv'
+    database_filename = 'DisasterResponse.db'
 
     # Load datasets
     messages, categories = load_data(messages_filepath, categories_filepath)
