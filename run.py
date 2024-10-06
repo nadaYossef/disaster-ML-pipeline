@@ -38,20 +38,6 @@ else:
 # Load model
 model = joblib.load("classifier.pkl")
 
-# Helper function for word cloud generation
-def generate_wordcloud(text_column):
-    text = " ".join(text_column)
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-
-    # Save the image to a string
-    img = BytesIO()
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.savefig(img, format='png')
-    img.seek(0)
-
-    img_b64 = base64.b64encode(img.getvalue()).decode('utf8')
-    return img_b64
 
 # Helper function for question 2 - most frequent words
 def most_frequent_words(text_column, n=10):
